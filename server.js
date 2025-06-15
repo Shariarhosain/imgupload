@@ -1,8 +1,9 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 // Import all the necessary functions from your upload module
-import { upload, getFileUrl, deleteFile } from './upload.js'; 
+import { upload, getFileUrl, deleteFile, UPLOAD_DIR } from './upload.js'; 
 
 // --- Basic Setup ---
 const __filename = fileURLToPath(import.meta.url);
@@ -16,6 +17,24 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve the uploaded files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --- API Endpoint to List All Images ---
+app.get('/images', (req, res) => {
+    fs.readdir(UPLOAD_DIR, (err, files) => {
+        if (err) {
+            console.error("Could not list the directory.", err);
+            return res.status(500).json({ error: 'Failed to list images.' });
+        }
+
+        // Filter out any non-image files or system files if necessary (e.g., .DS_Store)
+        const imageFiles = files.filter(file => /\.(jpg|jpeg|png)$/i.test(file));
+        
+        // Map the filenames to their full URLs
+        const imageUrls = imageFiles.map(filename => getFileUrl(req, filename));
+
+        res.status(200).json(imageUrls);
+    });
+});
+
 // --- API Endpoint for File Upload ---
 // This route handles the image upload.
 app.post('/upload', upload.single('image'), (req, res) => {
@@ -23,8 +42,8 @@ app.post('/upload', upload.single('image'), (req, res) => {
     return res.status(400).json({ error: 'No file was uploaded. Please select a JPG or PNG file.' });
   }
 
-  // Use the getFileUrl function to construct the URL
-  const fileUrl = getFileUrl(req.file.filename);
+  // Use the getFileUrl function, passing the request object to generate the URL dynamically
+  const fileUrl = getFileUrl(req, req.file.filename);
   
   res.status(200).json({
     message: 'File uploaded successfully!',
@@ -35,7 +54,6 @@ app.post('/upload', upload.single('image'), (req, res) => {
 
 // --- API Endpoint for File Deletion ---
 // This route handles deleting a specific file.
-// It uses a route parameter ':filename' to know which file to delete.
 app.delete('/delete/:filename', (req, res) => {
     const { filename } = req.params;
     
