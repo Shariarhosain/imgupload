@@ -5,12 +5,12 @@ services:
     build: .
     container_name: image-uploader
     ports:
-      - "3000:3000"
+      - "3200:3200"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3200
     volumes:
-      - uploads:/app/uploads
+      - ./uploads:/app/uploads        # ✅ Now persistent
       - ./public:/app/public
     restart: unless-stopped
     networks:
@@ -19,7 +19,3 @@ services:
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  uploads:
-    driver: local
