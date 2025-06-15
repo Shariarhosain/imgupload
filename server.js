@@ -25,11 +25,11 @@ app.get('/images', (req, res) => {
             return res.status(500).json({ error: 'Failed to list images.' });
         }
 
-        // Filter out any non-image files or system files if necessary (e.g., .DS_Store)
+        // Filter out any non-image files
         const imageFiles = files.filter(file => /\.(jpg|jpeg|png)$/i.test(file));
         
-        // Map the filenames to their full URLs
-        const imageUrls = imageFiles.map(filename => getFileUrl(req, filename));
+        // **FIXED**: Map the filenames to their full URLs using only the filename.
+        const imageUrls = imageFiles.map(filename => getFileUrl(filename));
 
         res.status(200).json(imageUrls);
     });
@@ -42,8 +42,8 @@ app.post('/upload', upload.single('image'), (req, res) => {
     return res.status(400).json({ error: 'No file was uploaded. Please select a JPG or PNG file.' });
   }
 
-  // Use the getFileUrl function, passing the request object to generate the URL dynamically
-  const fileUrl = getFileUrl(req, req.file.filename);
+  // **FIXED**: Use getFileUrl with only the filename, as defined in your upload.js
+  const fileUrl = getFileUrl(req.file.filename);
   
   res.status(200).json({
     message: 'File uploaded successfully!',
