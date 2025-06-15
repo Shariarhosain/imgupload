@@ -29,7 +29,35 @@ const listingUpload = upload.fields([
     { name: 'main_image', maxCount: 1 },
     { name: 'sub_images', maxCount: 10 }
 ]);
+// --- API Endpoint to Search Image by Filename ---
+app.get('/images/search/:filename', (req, res) => {
+    const { filename } = req.params;
+    
+    fs.readdir(UPLOAD_DIR, (err, files) => {
+        if (err) {
+            console.error("Could not list the directory.", err);
+            return res.status(500).json({ error: 'Failed to search images.' });
+        }
 
+        const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+        const foundFile = imageFiles.find(file => file === filename);
+
+        if (foundFile) {
+            res.status(200).json({
+                success: true,
+                image: {
+                    url: getFileUrl(foundFile),
+                    filename: foundFile
+                }
+            });
+        } else {
+            res.status(404).json({ 
+                error: `Image ${filename} not found.`,
+                success: false 
+            });
+        }
+    });
+});
 // --- API Endpoint to List All Images ---
 app.get('/images', (req, res) => {
     fs.readdir(UPLOAD_DIR, (err, files) => {
