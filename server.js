@@ -1,13 +1,14 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { upload } from './upload.js'; // Import the upload middleware
+// Import all the necessary functions from your upload module
+import { upload, getFileUrl, deleteFile } from './upload.js'; 
 
 // --- Basic Setup ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
-const PORT = process.env.PORT || 3100;
+const PORT = process.env.PORT || 3000;
 
 // --- Static File Serving ---
 // Serve the frontend (the HTML file)
@@ -16,25 +17,38 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- API Endpoint for File Upload ---
-// This route handles the image upload. The `upload.single('image')` middleware
-// processes a single file uploaded in the 'image' field of the form.
+// This route handles the image upload.
 app.post('/upload', upload.single('image'), (req, res) => {
-  // If multer middleware fails or no file is uploaded, req.file will be undefined.
   if (!req.file) {
     return res.status(400).json({ error: 'No file was uploaded. Please select a JPG or PNG file.' });
   }
 
-  // Construct the full URL for the uploaded file.
-  // It combines the server protocol, host, and the path to the file.
+  // Use the getFileUrl function to construct the URL
+  const fileUrl = getFileUrl(req.file.filename);
   
-  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  
-  // Send the URL back to the client in a JSON response.
   res.status(200).json({
     message: 'File uploaded successfully!',
     url: fileUrl,
+    filename: req.file.filename // Send filename back to client for delete requests
   });
 });
+
+// --- API Endpoint for File Deletion ---
+// This route handles deleting a specific file.
+// It uses a route parameter ':filename' to know which file to delete.
+app.delete('/delete/:filename', (req, res) => {
+    const { filename } = req.params;
+    
+    // Call the deleteFile function from your upload module
+    const wasDeleted = deleteFile(filename);
+
+    if (wasDeleted) {
+        res.status(200).json({ message: `File ${filename} deleted successfully.`});
+    } else {
+        res.status(404).json({ error: `File ${filename} not found or could not be deleted.` });
+    }
+});
+
 
 // --- Error Handling ---
 // A simple catch-all for other routes that don't exist
