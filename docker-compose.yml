@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  image-uploader:
+    build: .
+    container_name: image-uploader
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - uploads:/app/uploads
+      - ./public:/app/public
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  uploads:
+    driver: local
