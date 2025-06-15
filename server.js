@@ -12,10 +12,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- Static File Serving ---
-// Serve the frontend (the HTML file)
 app.use(express.static(path.join(__dirname, 'public')));
-// Serve the uploaded files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// --- Multer configuration for multiple file types ---
+const listingUpload = upload.fields([
+    { name: 'main_image', maxCount: 1 },
+    { name: 'sub_images', maxCount: 10 }
+]);
 
 // --- API Endpoint to List All Images ---
 app.get('/images', (req, res) => {
@@ -25,39 +29,49 @@ app.get('/images', (req, res) => {
             return res.status(500).json({ error: 'Failed to list images.' });
         }
 
-        // Filter out any non-image files
         const imageFiles = files.filter(file => /\.(jpg|jpeg|png)$/i.test(file));
-        
-        // **FIXED**: Map the filenames to their full URLs using only the filename.
         const imageUrls = imageFiles.map(filename => getFileUrl(filename));
 
         res.status(200).json(imageUrls);
     });
 });
 
-// --- API Endpoint for File Upload ---
-// This route handles the image upload.
-app.post('/upload', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file was uploaded. Please select a JPG or PNG file.' });
-  }
+// --- API Endpoint for Multiple File Upload ---
+app.post('/upload', listingUpload, (req, res) => {
+    if (!req.files || (!req.files.main_image && !req.files.sub_images)) {
+        return res.status(400).json({ error: 'No files were uploaded.' });
+    }
 
-  // **FIXED**: Use getFileUrl with only the filename, as defined in your upload.js
-  const fileUrl = getFileUrl(req.file.filename);
-  
-  res.status(200).json({
-    message: 'File uploaded successfully!',
-    url: fileUrl,
-    filename: req.file.filename // Send filename back to client for delete requests
-  });
+    const response = {
+        message: 'Files uploaded successfully!',
+        main_image: null,
+        sub_images: []
+    };
+
+    // Process main image
+    if (req.files.main_image && req.files.main_image[0]) {
+        const mainFile = req.files.main_image[0];
+        response.main_image = {
+            url: getFileUrl(mainFile.filename),
+            filename: mainFile.filename
+        };
+    }
+
+    // Process sub images
+    if (req.files.sub_images) {
+        response.sub_images = req.files.sub_images.map(file => ({
+            url: getFileUrl(file.filename),
+            filename: file.filename
+        }));
+    }
+
+    res.status(200).json(response);
 });
 
 // --- API Endpoint for File Deletion ---
-// This route handles deleting a specific file.
 app.delete('/delete/:filename', (req, res) => {
     const { filename } = req.params;
     
-    // Call the deleteFile function from your upload module
     const wasDeleted = deleteFile(filename);
 
     if (wasDeleted) {
@@ -67,14 +81,12 @@ app.delete('/delete/:filename', (req, res) => {
     }
 });
 
-
 // --- Error Handling ---
-// A simple catch-all for other routes that don't exist
 app.use((req, res) => {
     res.status(404).send("Sorry, can't find that!");
 });
 
 // --- Start the Server ---
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
