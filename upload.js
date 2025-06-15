@@ -58,7 +58,7 @@ const upload = multer({
 const getFileUrl = (filename) => {
   // This function assumes the server is running on localhost:3000.
   // In a production environment, you would use environment variables for the base URL.
-  return `http://localhost:3000/uploads/${filename}`;
+  return `http://q0c040w8s4gcc40kso48cog0.147.93.111.102.sslip.io/uploads/${filename}`;
 };
 
 /**
