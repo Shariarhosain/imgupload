@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Uploader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Image Uploader</h1>
+        <p class="text-center text-gray-500 mb-6">Upload a JPG or PNG file (Max 2.5MB)</p>
+
+        <!-- The Form for Uploading -->
+        <form id="uploadForm" class="space-y-6">
+            <div>
+                <label for="imageFile" class="block text-sm font-medium text-gray-700">Select Image</label>
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div class="space-y-1 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div class="flex text-sm text-gray-600">
+                            <label for="imageFile" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                <span>Upload a file</span>
+                                <input id="imageFile" name="image" type="file" class="sr-only" accept="image/png, image/jpeg">
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p id="fileName" class="text-xs text-gray-500">PNG, JPG up to 2.5MB</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Button -->
+            <button type="submit" id="submitBtn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Upload Image
+            </button>
+        </form>
+
+        <!-- Result Display Area -->
+        <div id="result" class="mt-6 hidden">
+            <h2 class="text-lg font-semibold text-gray-800">Success!</h2>
+            <p class="text-sm text-gray-600 mb-2">Your image has been uploaded.</p>
+            <div class="relative bg-gray-50 p-3 rounded-md">
+                 <input id="fileUrl" type="text" class="w-full bg-transparent text-indigo-700 text-sm border-none focus:ring-0" readonly>
+                 <button id="copyBtn" class="absolute top-1/2 right-2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-1 px-2 rounded">Copy</button>
+            </div>
+            <div class="mt-4">
+                <img id="previewImage" src="" alt="Image preview" class="max-w-full rounded-md shadow-md mx-auto"/>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loader" class="mt-6 hidden text-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-gray-600">Uploading...</span>
+        </div>
+        
+        <!-- Error Message -->
+         <div id="error" class="mt-4 hidden p-3 bg-red-100 border border-red-400 text-red-700 rounded-md"></div>
+
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const imageFile = document.getElementById('imageFile');
+        const fileNameDisplay = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultDiv = document.getElementById('result');
+        const fileUrlInput = document.getElementById('fileUrl');
+        const previewImage = document.getElementById('previewImage');
+        const copyBtn = document.getElementById('copyBtn');
+        const loader = document.getElementById('loader');
+        const errorDiv = document.getElementById('error');
+        
+        // Update file name display on selection
+        imageFile.addEventListener('change', () => {
+            const file = imageFile.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+            } else {
+                fileNameDisplay.textContent = 'PNG, JPG up to 2.5MB';
+            }
+        });
+
+        // Handle form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form redirect
+
+            const file = imageFile.files[0];
+            if (!file) {
+                showError('Please select a file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // Show loader and hide previous results/errors
+            loader.classList.remove('hidden');
+            submitBtn.disabled = true;
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Handle server-side errors (e.g., wrong file type)
+                    throw new Error(data.error || 'Something went wrong.');
+                }
+                
+                // On success, display the result
+                fileUrlInput.value = data.url;
+                previewImage.src = data.url;
+                resultDiv.classList.remove('hidden');
+
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                // Hide loader and re-enable button
+                loader.classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Copy button functionality
+        copyBtn.addEventListener('click', () => {
+            fileUrlInput.select();
+            // Use execCommand for broader compatibility within iframes
+            document.execCommand('copy');
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy';
+            }, 2000);
+        });
+        
+        // Helper to display error messages
+        function showError(message) {
+             errorDiv.textContent = message;
+             errorDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
