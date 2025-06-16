@@ -162,8 +162,8 @@ app.use((req, res) => {
     res.status(404).json({ error: "Sorry, can't find that!", success: false });
 });
 
-// // --- Start the Server ---
-// app.listen(PORT, () => {
-//     console.log(`Server is running on http://localhost:${PORT}`);
-//     console.log(`Upload endpoint: http://localhost:${PORT}/upload`);
-// });
+// --- Start the Server ---
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Upload endpoint: http://localhost:${PORT}/upload`);
+});
