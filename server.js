@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import cors from 'cors';
 // Import all the necessary functions from your upload module
 import { upload, getFileUrl, deleteFile, UPLOAD_DIR } from './upload.js'; 
 
