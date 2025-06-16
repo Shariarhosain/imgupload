@@ -13,12 +13,13 @@ const PORT = process.env.PORT || 3200;
 
 // --- CORS and JSON middleware ---
 app.use(express.json());
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    next();
-});
+//allow all origins for CORS
+app.use(cors({
+  origin: '*', // Be cautious with '*' in production
+  methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'],
+  credentials: true,
+}));
+
 
 // --- Static File Serving ---
 app.use(express.static(path.join(__dirname, 'public')));
