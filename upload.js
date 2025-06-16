@@ -31,15 +31,21 @@ const storage = multer.diskStorage({
 
 // --- Multer File Filter ---
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png/;
-  const mimetype = allowedTypes.test(file.mimetype);
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const allowedExts = ['.jpeg', '.jpg', '.png'];
+  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
 
-  if (mimetype && extname) {
+  const extname = allowedExts.includes(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedMimeTypes.includes(file.mimetype);
+
+  console.log(`Uploading file: ${file.originalname}, MIME: ${file.mimetype}`);
+
+  if (extname && mimetype) {
     return cb(null, true);
   }
-  cb(new Error('Error: File upload only supports the following filetypes - ' + allowedTypes), false);
+
+  cb(new Error(`Error: File upload only supports JPEG and PNG formats.`), false);
 };
+
 
 // --- Multer Initialization ---
 const upload = multer({
