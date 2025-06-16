@@ -58,7 +58,7 @@ const upload = multer({
 const getFileUrl = (filename) => {
   // This function assumes the server is running on localhost:3000.
   // In a production environment, you would use environment variables for the base URL.
-  return `https://imgupload-production.up.railway.app/uploads/${filename}`;
+  return `https://img.batteryqk.com//uploads/${filename}`;
 };
 
 /**
